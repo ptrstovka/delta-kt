@@ -1,6 +1,16 @@
-class Delta {
+class Delta: Iterable<Op<*>> {
 
     private val ops = mutableListOf<Op<*>>()
+
+    constructor() {}
+
+    constructor(ops: List<Op<*>>) {
+        ops.forEach { this.ops.add(it) }
+    }
+
+    constructor(ops: Array<Op<*>>) {
+        ops.forEach { this.ops.add(it) }
+    }
 
     /**
      * Add a Insert operation.
@@ -98,10 +108,68 @@ class Delta {
     }
 
     /**
-     * Retrieve the length of the delta.
+     * Remove last Op if it is Retain.
+     */
+    fun chop(): Delta {
+        val lastOp = ops.lastOrNull()
+
+        if (lastOp != null && lastOp is Retain && lastOp.attributes.isEmpty()) {
+            ops.removeAt(ops.size - 1)
+        }
+
+        return this
+    }
+
+    /**
+     * Return the length of the Insert after change by Delete.
+     */
+    fun changeLength(): Int {
+        return fold(0) { length, op ->
+            when (op) {
+                is Insert -> length + op.length()
+                is Delete -> length - op.length()
+                else -> length
+            }
+        }
+    }
+
+    /**
+     * Retrieve sum of the Op's sizes.
      */
     fun length(): Int {
+        return fold(0) { length, op ->
+            length + op.length()
+        }
+    }
+
+    fun slice(range: IntRange): Delta {
+        val ops = mutableListOf<Op<*>>()
+
+        var index = 0
+        val iterator = iterator() as DeltaIterator
+        while (index < range.last && iterator.hasNext()) {
+            var nextOp: Op<*>
+            if (index < range.first) {
+                nextOp = iterator.next(range.first - index)
+            } else {
+                nextOp = iterator.next(range.last - index)
+                ops.add(nextOp)
+            }
+            index += nextOp.length()
+        }
+
+        return Delta(ops)
+    }
+
+    /**
+     * Retrieve Ops count of the Delta.
+     */
+    fun size(): Int {
         return ops.size
+    }
+
+    override fun iterator(): Iterator<Op<*>> {
+        return DeltaIterator(ops)
     }
 
     /**
@@ -109,6 +177,13 @@ class Delta {
      */
     fun getOpAtIndex(index: Int): Op<*>? {
         return ops.getOrNull(index)
+    }
+
+    /**
+     * Retrieve the Ops list.
+     */
+    fun getOpsList(): List<Op<*>> {
+        return ops
     }
 
     override fun equals(other: Any?): Boolean {
@@ -123,6 +198,5 @@ class Delta {
     override fun hashCode(): Int {
         return ops.hashCode()
     }
-
 
 }

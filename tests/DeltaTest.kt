@@ -7,7 +7,7 @@ internal class DeltaTest {
     fun delta_should_be_empty_on_after_construction() {
         assertEquals(
             0,
-            Delta().length()
+            Delta().size()
         )
     }
 
@@ -16,7 +16,8 @@ internal class DeltaTest {
     @Test
     fun it_should_insert_text() {
         val delta = Delta().insert("test")
-        assertEquals(1, delta.length())
+
+        assertEquals(1, delta.size())
         val op = delta.getOpAtIndex(0)
         assertNotNull(op)
         assertTrue(op is Insert)
@@ -53,19 +54,19 @@ internal class DeltaTest {
     fun it_should_not_add_delete_op_on_zero_or_negative() {
         assertEquals(
             0,
-            Delta().delete(0).length()
+            Delta().delete(0).size()
         )
 
         assertEquals(
             0,
-            Delta().delete(-1).length()
+            Delta().delete(-1).size()
         )
     }
 
     @Test
     fun it_should_add_delta_op_on_positive() {
         val delta = Delta().delete(1)
-        assertEquals(1, delta.length())
+        assertEquals(1, delta.size())
         val op = delta.getOpAtIndex(0)
         assertNotNull(op)
         assertTrue(op is Delete)
@@ -78,12 +79,12 @@ internal class DeltaTest {
     fun it_should_not_add_retain_op_on_zero_or_negative() {
         assertEquals(
             0,
-            Delta().retain(0).length()
+            Delta().retain(0).size()
         )
 
         assertEquals(
             0,
-            Delta().retain(-1).length()
+            Delta().retain(-1).size()
         )
     }
 
@@ -93,7 +94,7 @@ internal class DeltaTest {
     fun it_should_push_to_empty_delta() {
         assertEquals(
             1,
-            Delta().push(Insert("text")).length()
+            Delta().push(Insert("text")).size()
         )
     }
 
@@ -102,7 +103,7 @@ internal class DeltaTest {
         val delta = Delta().delete(10)
         delta.push(Delete(10))
 
-        assertEquals(1, delta.length())
+        assertEquals(1, delta.size())
         val op = delta.getOpAtIndex(0)
         assertNotNull(op)
         assertTrue(op is Delete)
@@ -114,7 +115,7 @@ internal class DeltaTest {
         val delta = Delta().insert("a")
         delta.push(Insert("b"))
 
-        assertEquals(1, delta.length())
+        assertEquals(1, delta.size())
         val op = delta.getOpAtIndex(0)
         assertNotNull(op)
         assertTrue(op is Insert)
@@ -126,7 +127,7 @@ internal class DeltaTest {
         val delta = Delta().insert("a", mapOf("bold" to "true"))
         delta.push(Insert("b", mapOf("bold" to "true")))
 
-        assertEquals(1, delta.length())
+        assertEquals(1, delta.size())
         val op = delta.getOpAtIndex(0)
         assertNotNull(op)
         assertTrue(op is Insert)
@@ -140,7 +141,7 @@ internal class DeltaTest {
         val delta = Delta().retain(1, mapOf("bold" to "true"))
         delta.push(Retain(2, mapOf("bold" to "true")))
 
-        assertEquals(1, delta.length())
+        assertEquals(1, delta.size())
         val op = delta.getOpAtIndex(0)
         assertNotNull(op)
         assertTrue(op is Retain)
@@ -153,7 +154,7 @@ internal class DeltaTest {
         val delta = Delta().insert("a", mapOf("bold" to "true"))
         delta.push(Insert("b"))
 
-        assertEquals(2, delta.length())
+        assertEquals(2, delta.size())
         val op1 = delta.getOpAtIndex(0)
         assertNotNull(op1)
         assertTrue(op1 is Insert)
@@ -171,7 +172,7 @@ internal class DeltaTest {
         val delta = Delta().retain(1, mapOf("bold" to "true"))
         delta.push(Retain(2))
 
-        assertEquals(2, delta.length())
+        assertEquals(2, delta.size())
         val op1 = delta.getOpAtIndex(0)
         assertNotNull(op1)
         assertTrue(op1 is Retain)
@@ -190,7 +191,7 @@ internal class DeltaTest {
     fun it_should_add_retain_op_on_positive() {
         assertEquals(
             1,
-            Delta().retain(1).length()
+            Delta().retain(1).size()
         )
     }
 

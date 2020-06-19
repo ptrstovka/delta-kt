@@ -24,6 +24,10 @@ abstract class Op<T>(
         return result
     }
 
+    override fun toString(): String {
+        return "Op(type='$type', value=$value, attributes=$attributes)"
+    }
+
 }
 
 class Insert(value: String, attributes: Map<String, String> = mapOf()): Op<String>(value, attributes) {
