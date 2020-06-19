@@ -208,4 +208,27 @@ internal class DeltaTest {
         )
     }
 
+    // Helpers
+
+    @Test
+    fun it_should_slice_ops() {
+        val slice = Delta()
+            .retain(2)
+            .insert("A")
+            .slice(2)
+
+        assertEquals(
+            Delta().insert("A"),
+            slice
+        )
+    }
+
+    @Test
+    fun start_and_end_chop() {
+        assertEquals(
+            Delta().insert("23456"),
+            Delta().insert("0123456789").slice(2..7)
+        )
+    }
+
 }

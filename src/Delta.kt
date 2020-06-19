@@ -2,7 +2,7 @@ class Delta: Iterable<Op<*>> {
 
     private val ops = mutableListOf<Op<*>>()
 
-    constructor() {}
+    constructor()
 
     constructor(ops: List<Op<*>>) {
         ops.forEach { this.ops.add(it) }
@@ -142,6 +142,10 @@ class Delta: Iterable<Op<*>> {
         }
     }
 
+    fun slice(start: Int, end: Int = Int.MAX_VALUE): Delta {
+        return slice(start until end)
+    }
+
     fun slice(range: IntRange): Delta {
         val ops = mutableListOf<Op<*>>()
 
@@ -161,6 +165,10 @@ class Delta: Iterable<Op<*>> {
         return Delta(ops)
     }
 
+//    fun concat(): Delta {
+//
+//    }
+//
     /**
      * Retrieve Ops count of the Delta.
      */
@@ -197,6 +205,10 @@ class Delta: Iterable<Op<*>> {
 
     override fun hashCode(): Int {
         return ops.hashCode()
+    }
+
+    override fun toString(): String {
+        return "Delta(ops=$ops)"
     }
 
 }
