@@ -85,6 +85,7 @@ class Delta: Iterable<Op<*>> {
 
         // If Ops have same attributes
         if (lastOp != null && newOp.attributes == lastOp.attributes) {
+            // TODO: Add merge logic to Op class
             // If there are two insersts, we will merge them to one.
             if (newOp is Insert && lastOp is Insert) {
                 ops[index - 1] = Insert("${lastOp.value}${newOp.value}", newOp.attributes)
