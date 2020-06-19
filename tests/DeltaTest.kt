@@ -3,6 +3,14 @@ import org.junit.jupiter.api.Test
 
 internal class DeltaTest {
 
+    @Test
+    fun delta_should_be_empty_on_after_construction() {
+        assertEquals(
+            0,
+            Delta().length()
+        )
+    }
+
     // Insert
 
     @Test
@@ -124,6 +132,56 @@ internal class DeltaTest {
         assertTrue(op is Insert)
         assertEquals("ab", op?.value)
         assertEquals(mapOf("bold" to "true"), op?.attributes)
+    }
+
+    @Test
+    fun it_should_merge_two_retains_when_matching_attributes()
+    {
+        val delta = Delta().retain(1, mapOf("bold" to "true"))
+        delta.push(Retain(2, mapOf("bold" to "true")))
+
+        assertEquals(1, delta.length())
+        val op = delta.getOpAtIndex(0)
+        assertNotNull(op)
+        assertTrue(op is Retain)
+        assertEquals(3, op?.value)
+        assertEquals(mapOf("bold" to "true"), op?.attributes)
+    }
+
+    @Test
+    fun it_should_add_insert_when_attributes_does_not_match() {
+        val delta = Delta().insert("a", mapOf("bold" to "true"))
+        delta.push(Insert("b"))
+
+        assertEquals(2, delta.length())
+        val op1 = delta.getOpAtIndex(0)
+        assertNotNull(op1)
+        assertTrue(op1 is Insert)
+        assertEquals("a", op1?.value)
+        assertEquals(mapOf("bold" to "true"), op1?.attributes)
+        val op2 = delta.getOpAtIndex(1)
+        assertNotNull(op2)
+        assertTrue(op2 is Insert)
+        assertEquals("b", op2?.value)
+        assertEquals(emptyMap<String, String>(), op2?.attributes)
+    }
+
+    @Test
+    fun it_should_add_retain_when_attributes_does_not_match() {
+        val delta = Delta().retain(1, mapOf("bold" to "true"))
+        delta.push(Retain(2))
+
+        assertEquals(2, delta.length())
+        val op1 = delta.getOpAtIndex(0)
+        assertNotNull(op1)
+        assertTrue(op1 is Retain)
+        assertEquals(1, op1?.value)
+        assertEquals(mapOf("bold" to "true"), op1?.attributes)
+        val op2 = delta.getOpAtIndex(1)
+        assertNotNull(op2)
+        assertTrue(op2 is Retain)
+        assertEquals(2, op2?.value)
+        assertEquals(emptyMap<String, String>(), op2?.attributes)
     }
 
     // Equal
