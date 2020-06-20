@@ -33,7 +33,7 @@ compileTestKotlin {
 
 test {
     testLogging {
-        events 'PASSED', 'FAILED', 'SKIPPED'
+        events 'FAILED', 'SKIPPED'
     }
 
     useJUnitPlatform()

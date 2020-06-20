@@ -1,4 +1,4 @@
-class Delta: Iterable<Op<*>> {
+class Delta {
 
     private val ops = mutableListOf<Op<*>>()
 
@@ -121,7 +121,7 @@ class Delta: Iterable<Op<*>> {
      * Return the length of the Insert after change by Delete.
      */
     fun changeLength(): Int {
-        return fold(0) { length, op ->
+        return reduce(0) { length, op ->
             when (op) {
                 is Insert -> length + op.length()
                 is Delete -> length - op.length()
@@ -134,9 +134,51 @@ class Delta: Iterable<Op<*>> {
      * Retrieve sum of the Op's sizes.
      */
     fun length(): Int {
-        return fold(0) { length, op ->
+        return reduce(0) { length, op ->
             length + op.length()
         }
+    }
+
+    fun <T> reduce(initialValue: T, operation: (accum: T, value: Op<*>) -> T): T {
+        return ops.fold(initialValue, operation)
+    }
+
+    fun <T> reduceIndexed(initialValue: T, operation: (accum: T, value: Op<*>, index: Int) -> T): T {
+        return ops.foldIndexed(initialValue) { index: Int, acc: T, op: Op<*> ->
+            operation(acc, op, index)
+        }
+    }
+
+    fun filter(predicate: (op: Op<*>) -> Boolean): List<Op<*>> {
+        return ops.filter(predicate)
+    }
+
+    fun filterIndexed(predicate: (index: Int, op: Op<*>) -> Boolean): List<Op<*>> {
+        return ops.filterIndexed(predicate)
+    }
+
+    fun forEach(action: (op: Op<*>) -> Unit) {
+        ops.forEach(action)
+    }
+
+    fun forEachIndexed(action: (index: Int, op: Op<*>) -> Unit) {
+        ops.forEachIndexed(action)
+    }
+
+    fun <T> map(transform: (op: Op<*>) -> T): List<T> {
+        return ops.map(transform)
+    }
+
+    fun <T> mapIndexed(transform: (index: Int, op: Op<*>) -> T): List<T> {
+        return ops.mapIndexed(transform)
+    }
+
+    fun partition(predicate: (op: Op<*>) -> Boolean): Pair<List<Op<*>>, List<Op<*>>> {
+        return ops.partition(predicate)
+    }
+
+    fun slice(): Delta {
+        return slice(0)
     }
 
     fun slice(start: Int, end: Int = Int.MAX_VALUE): Delta {
@@ -147,7 +189,7 @@ class Delta: Iterable<Op<*>> {
         val ops = mutableListOf<Op<*>>()
 
         var index = 0
-        val iterator = iterator() as DeltaIterator
+        val iterator = iterator()
         while (index < range.last && iterator.hasNext()) {
             var nextOp: Op<*>
             if (index < range.first) {
@@ -184,7 +226,7 @@ class Delta: Iterable<Op<*>> {
             predicate: (line: Delta, attributes: Map<String, String>, index: Int) -> Boolean,
             newLine: String = "\n"
     ) {
-        val iterator = iterator() as DeltaIterator
+        val iterator = iterator()
         var line = Delta()
         var i = 0
         while (iterator.hasNext()) {
@@ -224,7 +266,7 @@ class Delta: Iterable<Op<*>> {
         return ops.size
     }
 
-    override fun iterator(): Iterator<Op<*>> {
+    fun iterator(): DeltaIterator {
         return DeltaIterator(ops)
     }
 

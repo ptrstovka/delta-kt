@@ -15,6 +15,7 @@ internal class DeltaIteratorTest {
             .delete(4)
     }
 
+
     @Test
     fun it_has_next_true() {
         assertTrue(
