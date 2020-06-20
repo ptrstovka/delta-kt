@@ -176,6 +176,10 @@ class Delta: Iterable<Op<*>> {
         return delta
     }
 
+    fun eachLine(predicate: EachLine) {
+        eachLine(predicate::predicate)
+    }
+
     fun eachLine(
             predicate: (line: Delta, attributes: Map<String, String>, index: Int) -> Boolean,
             newLine: String = "\n"

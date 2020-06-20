@@ -1,5 +1,8 @@
+import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.anyInt
+import org.mockito.ArgumentMatchers.anyMap
 
 internal class DeltaTest {
 
@@ -262,6 +265,95 @@ internal class DeltaTest {
                 Delta().insert("Test").retain(4, mapOf("bold" to "true")),
                 Delta().insert("Test").retain(4, mapOf("bold" to "true")).chop()
         )
+    }
+
+    @Test
+    fun it_should_expect_predicate_to_be_called() {
+        val delta = Delta()
+                .insert("Hello\n\n")
+                .insert("World", mapOf("bold" to "true"))
+                .insert("abcd", mapOf("color" to "red"))
+                .insert("\n", mapOf("align" to "right"))
+                .insert("!")
+
+        val predicate = mock<EachLine> {
+            on { predicate(any(), anyMap(), anyInt()) } doReturn true
+        }
+
+        delta.eachLine(predicate)
+
+        val deltaCaptor = argumentCaptor<Delta>()
+        val attributeCaptor = argumentCaptor<Map<String, String>>()
+        val indexCaptor = argumentCaptor<Int>()
+        verify(predicate, times(4)).predicate(
+                deltaCaptor.capture(), attributeCaptor.capture(), indexCaptor.capture()
+        )
+
+        assertEquals(Delta().insert("Hello"), deltaCaptor.firstValue)
+        assertEquals(emptyMap<String, String>(), attributeCaptor.firstValue)
+        assertEquals(0, indexCaptor.firstValue)
+
+        assertEquals(Delta(), deltaCaptor.secondValue)
+        assertEquals(emptyMap<String, String>(), attributeCaptor.secondValue)
+        assertEquals(1, indexCaptor.secondValue)
+
+        assertEquals(Delta().insert("World", mapOf("bold" to "true")).insert("abcd", mapOf("color" to "red")), deltaCaptor.thirdValue)
+        assertEquals(mapOf("align" to "right"), attributeCaptor.thirdValue)
+        assertEquals(2, indexCaptor.thirdValue)
+
+        assertEquals(Delta().insert("!"), deltaCaptor.lastValue)
+        assertEquals(emptyMap<String, String>(), attributeCaptor.lastValue)
+        assertEquals(3, indexCaptor.lastValue)
+    }
+
+    @Test
+    fun it_should_expect_predicate_to_be_called_when_trailing_newline() {
+        val delta = Delta().insert("Hello\nWorld!\n")
+
+        val predicate = mock<EachLine> {
+            on { predicate(any(), anyMap(), anyInt()) } doReturn true
+        }
+
+        delta.eachLine(predicate)
+
+        val deltaCaptor = argumentCaptor<Delta>()
+        val attributeCaptor = argumentCaptor<Map<String, String>>()
+        val indexCaptor = argumentCaptor<Int>()
+        verify(predicate, times(2)).predicate(
+                deltaCaptor.capture(), attributeCaptor.capture(), indexCaptor.capture()
+        )
+
+        assertEquals(Delta().insert("Hello"), deltaCaptor.firstValue)
+        assertEquals(emptyMap<String, String>(), attributeCaptor.firstValue)
+        assertEquals(0, indexCaptor.firstValue)
+
+        assertEquals(Delta().insert("World!"), deltaCaptor.secondValue)
+        assertEquals(emptyMap<String, String>(), attributeCaptor.secondValue)
+        assertEquals(1, indexCaptor.secondValue)
+    }
+
+    @Test
+    fun it_should_not_call_predicate_on_non_document() {
+        val delta = Delta().retain(1).delete(2)
+
+        val predicate = mock<EachLine> {
+            on { predicate(any(), anyMap(), anyInt()) } doReturn true
+        }
+
+        delta.eachLine(predicate)
+        verifyZeroInteractions(predicate)
+    }
+
+    @Test
+    fun it_should_early_return_when_returning_false_in_predicate() {
+        val delta = Delta().insert("Hello\nNew\nWorld!")
+
+        val predicate = mock<EachLine> {
+            on { predicate(any(), anyMap(), anyInt()) } doReturnConsecutively listOf(true, false)
+        }
+
+        delta.eachLine(predicate)
+        verify(predicate, times(2)).predicate(any(), anyMap(), anyInt())
     }
 
     @Test
