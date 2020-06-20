@@ -8,10 +8,6 @@ class Delta: Iterable<Op<*>> {
         ops.forEach { this.ops.add(it) }
     }
 
-    constructor(ops: Array<Op<*>>) {
-        ops.forEach { this.ops.add(it) }
-    }
-
     /**
      * Add a Insert operation.
      */
@@ -166,10 +162,57 @@ class Delta: Iterable<Op<*>> {
         return Delta(ops)
     }
 
-//    fun concat(): Delta {
-//
-//    }
-//
+    fun concat(other: Delta): Delta {
+        val delta = Delta(ops.slice(0 until ops.size))
+        val op = other.getOpAtIndex(0)
+        if (op != null) {
+            delta.push(op)
+            if (other.ops.size > 1) {
+                delta.setOps(
+                        delta.ops + other.ops.slice(1 until other.ops.size)
+                )
+            }
+        }
+        return delta
+    }
+
+    fun eachLine(
+            predicate: (line: Delta, attributes: Map<String, String>, index: Int) -> Boolean,
+            newLine: String = "\n"
+    ) {
+        val iterator = iterator() as DeltaIterator
+        var line = Delta()
+        var i = 0
+        while (iterator.hasNext()) {
+            if (iterator.peekType() != "insert") {
+                return
+            }
+
+            val thisOp = iterator.peek()!!
+            val start = thisOp.length() - iterator.peekLength()
+            val index = if (thisOp is Insert) {
+                thisOp.value.indexOf(newLine, start) - start
+            } else {
+                -1
+            }
+
+            if (index < 0) {
+                line.push(iterator.next())
+            } else if (index > 0) {
+                line.push(iterator.next(index))
+            } else {
+                if (! predicate(line, iterator.next(1).attributes, i)) {
+                    return
+                }
+                i++
+                line = Delta()
+            }
+        }
+        if (line.length() > 0) {
+            predicate(line, mapOf(), i)
+        }
+    }
+
     /**
      * Retrieve Ops count of the Delta.
      */
@@ -193,6 +236,11 @@ class Delta: Iterable<Op<*>> {
      */
     fun getOpsList(): List<Op<*>> {
         return ops
+    }
+
+    fun setOps(ops: List<Op<*>>) {
+        this.ops.clear()
+        ops.forEach { this.ops.add(it) }
     }
 
     override fun equals(other: Any?): Boolean {

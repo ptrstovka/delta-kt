@@ -211,6 +211,60 @@ internal class DeltaTest {
     // Helpers
 
     @Test
+    fun it_should_concat_empty_delta() {
+        val delta = Delta().insert("Test")
+        val concat = Delta()
+        assertEquals(
+                Delta().insert("Test"),
+                delta.concat(concat)
+        )
+    }
+
+    @Test
+    fun it_should_concat_without_merge() {
+        val delta = Delta().insert("Test")
+        val original = Delta(listOf(Insert("Test")))
+        val concat = Delta().insert("!", mapOf("bold" to "true"))
+        val expected = Delta().insert("Test").insert("!", mapOf("bold" to "true"))
+        assertEquals(expected, delta.concat(concat))
+        assertEquals(original, delta)
+    }
+
+    @Test
+    fun it_should_concat_with_merge() {
+        val delta = Delta().insert("Test", mapOf("bold" to "true"))
+        val original = Delta(listOf(Insert("Test", mapOf("bold" to "true"))))
+        val concat = Delta().insert("!", mapOf("bold" to "true")).insert("\n")
+        val expected = Delta().insert("Test!", mapOf("bold" to "true")).insert("\n")
+        assertEquals(expected, delta.concat(concat))
+        assertEquals(original, delta)
+    }
+
+    @Test
+    fun it_should_chop_retain() {
+        assertEquals(
+                Delta().insert("Test"),
+                Delta().insert("Test").retain(4).chop()
+        )
+    }
+
+    @Test
+    fun it_should_chop_insert() {
+        assertEquals(
+                Delta().insert("Test"),
+                Delta().insert("Test").chop()
+        )
+    }
+
+    @Test
+    fun it_should_chop_formatted_retain() {
+        assertEquals(
+                Delta().insert("Test").retain(4, mapOf("bold" to "true")),
+                Delta().insert("Test").retain(4, mapOf("bold" to "true")).chop()
+        )
+    }
+
+    @Test
     fun it_should_slice_ops() {
         val slice = Delta()
             .retain(2)
