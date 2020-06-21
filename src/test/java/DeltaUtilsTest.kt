@@ -5,7 +5,7 @@ import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.anyMap
 
-class DeltaIterationHelpers {
+class DeltaUtilsTest {
 
     @Test
     fun it_should_concat_empty_delta() {

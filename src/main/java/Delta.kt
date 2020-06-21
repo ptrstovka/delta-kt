@@ -1,3 +1,5 @@
+import kotlin.math.min
+
 class Delta {
 
     private val ops = mutableListOf<Op<*>>()
@@ -257,6 +259,58 @@ class Delta {
         if (line.length() > 0) {
             predicate(line, mapOf(), i)
         }
+    }
+
+    fun compose(other: Delta): Delta {
+        val thisIter = iterator()
+        val otherIter = other.iterator()
+        val ops = mutableListOf<Op<*>>()
+        val firstOther = otherIter.peek()
+        if (firstOther != null && firstOther is Retain && firstOther.attributes.isEmpty()) {
+            var firstLeft = firstOther.value
+            while (
+                thisIter.peekType() == "insert" &&
+                        thisIter.peekLength() <= firstLeft
+            ) {
+                firstLeft -= thisIter.peekLength()
+                ops.add(thisIter.next())
+            }
+            if (firstOther.value - firstLeft > 0) {
+                otherIter.next(firstOther.value - firstLeft)
+            }
+        }
+        val delta = Delta(ops)
+        while (thisIter.hasNext() || otherIter.hasNext()) {
+            if (otherIter.peekType() == "insert") {
+                delta.push(otherIter.next())
+            } else if (thisIter.peekType() == "delete") {
+                delta.push(thisIter.next())
+            } else {
+                val length = min(thisIter.peekLength(), otherIter.peekLength())
+                val thisOp = thisIter.next(length)
+                val otherOp = otherIter.next(length)
+                if (otherOp is Retain) {
+                    val attributes = Attributes.compose(thisOp.attributes, otherOp.attributes)
+                    val newOp = if (thisOp is Retain) {
+                        Retain(length, attributes)
+                    } else {
+                        Insert(thisOp.value as String, attributes) // TODO: Update here on embed
+                    }
+                    delta.push(newOp)
+
+                    // Optimization if rest of other is just retain
+                    if (! otherIter.hasNext() && delta.getOpAtIndex(delta.size() - 1) == newOp) {
+                        val rest = Delta(thisIter.rest())
+                        return delta.concat(rest).chop()
+                    }
+                    // Other op should be delete, we could be an insert or retain
+                    // Insert + delete cancels out
+                } else if (otherOp is Delete && thisOp is Retain) {
+                    delta.push(otherOp)
+                }
+            }
+        }
+        return delta.chop()
     }
 
     /**
