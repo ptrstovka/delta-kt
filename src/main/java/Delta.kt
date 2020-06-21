@@ -1,3 +1,4 @@
+import name.fraser.neil.plaintext.diff_match_patch
 import kotlin.math.min
 
 class Delta {
@@ -311,6 +312,56 @@ class Delta {
             }
         }
         return delta.chop()
+    }
+
+    fun diff(other: Delta): Delta {
+        if (ops == other.ops) {
+            return Delta()
+        }
+        val strings = arrayOf(this, other).map {
+            it.map { op ->
+              if (op is Insert) {
+                  op.value
+              } else {
+                  val prep = if (it == other) "on" else "with"
+                  throw Error("diff() called $prep non-document")
+              }
+            }.joinToString()
+        }
+        val retDelta = Delta()
+        val thisIter = this.iterator()
+        val otherIter = other.iterator()
+        println(this)
+        println(other)
+        println(strings)
+        diff_match_patch().diff_main(strings[0], strings[1]).forEach { component ->
+            var length = component.text.length
+            while (length > 0) {
+                var opLength = 0
+                if (component.operation == diff_match_patch.Operation.INSERT) {
+                    opLength = min(otherIter.peekLength(), length)
+                    retDelta.push(otherIter.next(opLength))
+                } else if (component.operation == diff_match_patch.Operation.DELETE) {
+                    opLength = min(length, thisIter.peekLength())
+                    thisIter.next(opLength)
+                    retDelta.delete(opLength)
+                } else if (component.operation == diff_match_patch.Operation.EQUAL) {
+                    opLength = arrayOf(thisIter.peekLength(), otherIter.peekLength(), length).min()!!
+                    val thisOp = thisIter.next(opLength)
+                    val otherOp = otherIter.next(opLength)
+                    if (thisOp is Insert && otherOp is Insert && thisOp.value == otherOp.value) {
+                      retDelta.retain(
+                              opLength // TODO: Add attribute diff here
+                      )
+                    } else {
+                        retDelta.push(otherOp).delete(opLength)
+                    }
+                }
+                length -= opLength
+            }
+        }
+
+        return retDelta.chop()
     }
 
     /**
