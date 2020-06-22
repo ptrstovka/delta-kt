@@ -14,6 +14,13 @@ class Attributes {
             return attributes
         }
 
+        fun diff(a: Map<String, String>, b: Map<String, String>): Map<String, String> {
+            (a.keys + b.keys).fold(mutableMapOf<String, String>(), { acc, value ->
+
+                value
+            })
+        }
+
     }
 
 }
