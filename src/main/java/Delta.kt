@@ -350,9 +350,10 @@ class Delta {
                     val thisOp = thisIter.next(opLength)
                     val otherOp = otherIter.next(opLength)
                     if (thisOp is Insert && otherOp is Insert && thisOp.value == otherOp.value) {
-                      retDelta.retain(
-                              opLength // TODO: Add attribute diff here
-                      )
+                        retDelta.retain(
+                                opLength,
+                                Attributes.diff(thisOp.attributes, otherOp.attributes)
+                        )
                     } else {
                         retDelta.push(otherOp).delete(opLength)
                     }
